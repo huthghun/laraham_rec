@@ -13,6 +13,7 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useHttpClient } from "../hooks/useHttp"; 
+import { useNavigate } from "react-router-dom";
 
 function Copyright(props) {
   return (
@@ -33,6 +34,13 @@ const defaultTheme = createTheme();
 
 
 export default function Login({ setToken }) {
+  let navigate = useNavigate(); 
+          const routeChange = () =>{ 
+            let path = `/home`;
+            navigate(path);
+            window.location.reload(false);
+        
+          }
   const { sendRequest } = useHttpClient();
     const handleSubmit = async (e) => {
       e.preventDefault();
@@ -54,6 +62,7 @@ export default function Login({ setToken }) {
           sessionStorage.setItem('firstname', responseData.firstname);
           sessionStorage.setItem('lastname', responseData.lastname);
           sessionStorage.setItem('study', responseData.study);
+          routeChange()
 
         }
       } catch (err) {}

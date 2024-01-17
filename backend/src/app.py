@@ -3,15 +3,16 @@ from bson.objectid import ObjectId
 
 from flask import Flask, request
 import json
-from flask import Flask
+from flask import Flask, jsonify
 from pymongo import MongoClient
 import random
 import helper
+import config
 
-uri = ""  # db-uri
+uri = config.getUri()
 client = MongoClient(uri)
 db = client.course_system
-collection = db["courses"]
+collection = db["courses_new"]
 u_collection = db["users"]
 cu_collection = db["course_users"]
 
@@ -23,9 +24,7 @@ app = Flask(__name__)
 @app.route("/login", methods=["POST"])
 def login():
     data = json.loads(request.data)
-    print(data)
     res = u_collection.find_one(data)
-    print(res)
     res["_id"] = str(res["_id"])
 
     return res
@@ -46,15 +45,28 @@ def test():
 def get_course():
     try:
         course_id = request.args.get("id")
+        user = request.args.get("uid")
         res = collection.find_one({"_id": course_id})
+        ratings = list(cu_collection.find({"cid": course_id}))
+        enrolled = len(list(filter(lambda x: x["uid"] == user, ratings))) > 0
+
         res2 = list(collection.find({"study": res["study"]}))
         rec = helper.get_recommendations(res2, res["_id"])
-        print(rec)
-        print(res2)
-        res3 = list(
-            filter(lambda x: (x["_id"] in rec) and x["_id"] != res["_id"], res2)
+        together = helper.association_rule(
+            cu_collection, collection, course_id, res["study"]
         )
-        return {"res": res, "rec": res3}
+        return {
+            "res": res,
+            "rec": rec,
+            "enrolled": enrolled,
+            "ratings": {
+                "count": len(ratings),
+                "r1": sum(list(map(lambda x: x["rating1"], ratings))),
+                "r2": sum(list(map(lambda x: x["rating2"], ratings))),
+                "r3": sum(list(map(lambda x: x["rating3"], ratings))),
+            },
+            "together": together,
+        }
     except Exception as e:
         print(e)
         return type(e)
@@ -69,7 +81,6 @@ def home():
     study = u_res["study"]
     c_res = []
     cu_ids = list(map(lambda x: x["cid"], cu_res))
-    print(cu_ids)
     for item in cu_ids:
         c_res = c_res + list(collection.find({"_id": item}))
 
@@ -78,25 +89,30 @@ def home():
     return {"user": u_res, "my_courses": c_res, "rec": r_res}
 
 
+@app.route("/rating", methods=["POST"])
+def addRating():
+    body = request.json
+    print(body)
+    res = "error"
+    u_res = list(cu_collection.find({"cid": body["cid"], "uid": body["uid"]}))
+    if len(u_res) == 0:
+        res = cu_collection.insert_one(body)
+        print(res)
+        res = "ok"
+    return {"res": res}
+
+
 @app.route("/test2", methods=["GET"])
 def test2():
-    study = "BAI"
-
-    if study != "":
-        res = list(
-            map(
-                lambda x: {"_id": x["_id"], "description": x["description"]},
-                collection.find({"study": study}),
-            )
-        )
-    else:
-        res = list(
-            map(
-                lambda x: {"_id": x["_id"], "description": x["description"]},
-                collection.find({}),
-            )
-        )
-    return {"res": res}
+    # uid = request.args.get("uid")
+    # u_res = u_collection.find_one({"_id": ObjectId(uid)})
+    # study = u_res["study"]
+    # r_res = list(collection.find({"study": study}))
+    # res = helper.get_matrix(r_res)
+    # res = list(map(lambda x: x["_id"], r_res))
+    course_id = request.args.get("id")
+    together = helper.association_rule(cu_collection, collection, course_id, "MAI")
+    return {"res": together}
 
 
 if __name__ == "__main__":
