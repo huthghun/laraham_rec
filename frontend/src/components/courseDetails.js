@@ -131,7 +131,7 @@ const CourseDetails = () => {
       </Paper>
       <Accordion  >
         < AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography component="span"> <Rating
+        <Typography component="span"> <Rating 
         name="text-feedback0"
         value={(rating1+rating2+rating3)/3}
         readOnly
