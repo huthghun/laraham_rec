@@ -2,7 +2,7 @@
 
 <table>
   <tr>
-    <th style="width:20%"><img src="./images/logo.png" style="width:100%"></th>
+    <th style="width:10%"><img src="./images/logo.png" style="width:100%"></th>
     <th>LecRec is a web application built for the BAI and MAI students of  the university Duisburg-Essen to help them to choose the elective courses based on the similarity between the courses, based on the student ratings or based on the course, that are been taken usually together.</th>
   </tr>
 </table>
@@ -11,7 +11,9 @@
 
 <img src="./images/model.png" style="width:90%">
 
-## Back-End
+## How to run the project:
+
+### Back-End
 
 Back-end is in the **backend** folder.
 
@@ -31,7 +33,7 @@ pip install -r requirements.txt
 python .\src\app.py
 ```
 
-## Front-End
+### Front-End
 
 Got to frontend folder and open cmd in this directory and run
 
@@ -68,3 +70,11 @@ npm start
 ## Demo:
 
 [Demo]()
+
+## Collaborators
+
+- Huthayfa Ghunaim
+- Anshuman Sinha
+- Mahsa Alizadeh
+- Ali Elhag
+- Robert Fiedler
