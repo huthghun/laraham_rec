@@ -8,11 +8,12 @@ from pymongo import MongoClient
 import random
 import helper
 import config
+import visual
 
 uri = config.getUri()
 client = MongoClient(uri)
 db = client.course_system
-collection = db["courses_new"]
+collection = db["courses_en"]
 u_collection = db["users"]
 cu_collection = db["course_users"]
 
@@ -49,9 +50,16 @@ def get_course():
         res = collection.find_one({"_id": course_id})
         ratings = list(cu_collection.find({"cid": course_id}))
         enrolled = len(list(filter(lambda x: x["uid"] == user, ratings))) > 0
-
         res2 = list(collection.find({"study": res["study"]}))
-        rec = helper.get_recommendations(res2, res["_id"])
+        rec = helper.get_recs(res2, [res], study=res["study"])
+        print(len(rec))
+        # rec_res = helper.get_recommendations(res2, res["_id"])
+        # rec = list(
+        #    filter(
+        #        lambda x: x["_id"] != course_id,
+        #       rec_res,
+        #   )
+        # )
         together = helper.association_rule(
             cu_collection, collection, course_id, res["study"]
         )
@@ -64,55 +72,92 @@ def get_course():
                 "r1": sum(list(map(lambda x: x["rating1"], ratings))),
                 "r2": sum(list(map(lambda x: x["rating2"], ratings))),
                 "r3": sum(list(map(lambda x: x["rating3"], ratings))),
+                "r4": sum(list(map(lambda x: x["rating4"], ratings))),
             },
             "together": together,
+            "vis": visual.getFigure(rec, res),
         }
     except Exception as e:
         print(e)
-        return type(e)
+        return {"message": str(e)}
 
 
 @app.route("/home", methods=["GET"])
 def home():
     uid = request.args.get("uid")
+    # args = uid = json.load(request.args.get("f"))
+    # print(args)
     u_res = u_collection.find_one({"_id": ObjectId(uid)})
     u_res["_id"] = str(u_res["_id"])
-    cu_res = list(cu_collection.find({"uid": uid}))
     study = u_res["study"]
-    c_res = []
+    cu_res = list(cu_collection.find({"uid": uid, "study": study}))
+    courses = list(collection.find({"study": study}))
     cu_ids = list(map(lambda x: x["cid"], cu_res))
-    for item in cu_ids:
-        c_res = c_res + list(collection.find({"_id": item}))
+    my_courses = list(filter(lambda x: x["_id"] in cu_ids, courses))
+    r_res = helper.get_recs(courses, my_courses, study=study)
+    rec2 = helper.get_rec_cf_rating(cu_collection, collection, study, uid, 4)
 
-    r_res = list(collection.find({"study": study}))
-    r_res = helper.get_similar(r_res, cu_ids)
-    return {"user": u_res, "my_courses": c_res, "rec": r_res}
+    return {
+        "user": u_res,
+        "my_courses": my_courses,
+        "rec": r_res,
+        # "vis": vis_res,
+        "rec2": rec2,
+    }
 
 
 @app.route("/rating", methods=["POST"])
 def addRating():
     body = request.json
-    print(body)
     res = "error"
     u_res = list(cu_collection.find({"cid": body["cid"], "uid": body["uid"]}))
     if len(u_res) == 0:
         res = cu_collection.insert_one(body)
-        print(res)
         res = "ok"
     return {"res": res}
 
 
 @app.route("/test2", methods=["GET"])
 def test2():
-    # uid = request.args.get("uid")
-    # u_res = u_collection.find_one({"_id": ObjectId(uid)})
-    # study = u_res["study"]
-    # r_res = list(collection.find({"study": study}))
-    # res = helper.get_matrix(r_res)
-    # res = list(map(lambda x: x["_id"], r_res))
     course_id = request.args.get("id")
-    together = helper.association_rule(cu_collection, collection, course_id, "MAI")
-    return {"res": together}
+    res = collection.find_one({"_id": course_id})
+    res2 = list(collection.find({"study": res["study"]}))
+
+    rec = helper.get_recommendations(res2, res["_id"], len(res2) - 1)
+    return {"res": rec}
+
+
+@app.route("/vis", methods=["POST"])
+def vis():
+    data = json.loads(request.data)
+    for k, v in list(data.items()):
+        if v is None or v == "":
+            del data[k]
+    print(data)
+    vis_res = visual.getGoFigure(data, 4)
+    return {"vis": vis_res}
+
+
+@app.route("/vis2", methods=["POST"])
+def vis2():
+    req = json.loads(request.data)
+    graph_typ = req["type"]
+    if graph_typ == 0:
+        data = req["args"]
+        for k, v in list(data.items()):
+            if v is None or v == "":
+                del data[k]
+        vis_res = visual.getDataForGraph(data, 4, req["score"], req["args"]["study"])
+        return {"vis": vis_res}
+    elif graph_typ == 1:
+        vis_res = visual.get_top_n(req["args"]["study"], 5)
+        return {"vis": vis_res}
+    elif graph_typ == 2:
+        if req["goal"] == "rotation":
+            vis_res = visual.get_pie_chart_rotation(req["args"]["study"])
+        else:
+            vis_res = visual.get_pie_chart_language(req["args"]["study"])
+        return {"vis": vis_res}
 
 
 if __name__ == "__main__":

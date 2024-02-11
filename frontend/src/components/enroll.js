@@ -14,7 +14,6 @@ import Rating from '@mui/material/Rating';
 import StarIcon from '@mui/icons-material/Star';
 import { useSearchParams } from 'react-router-dom';
 import { useHttpClient } from "../hooks/useHttp"; 
-import { blue } from "@mui/material/colors";
 
 const useStyles = makeStyles({
     btn:{
@@ -42,6 +41,8 @@ const BootstrapDialog = styled(Dialog)(({ theme }) => ({
     const [rating1, setRating1] = useState(0);
     const [rating2, setRating2] = useState(0);
     const [rating3, setRating3] = useState(0);
+    const [rating4, setRating4] = useState(0);
+
     const [queryParameters] = useSearchParams();
     const token = sessionStorage.getItem('token');
     const c_id = queryParameters.get("id");
@@ -63,6 +64,7 @@ const BootstrapDialog = styled(Dialog)(({ theme }) => ({
             "rating1": rating1,
             "rating2": rating2,
             "rating3":rating3,
+            "rating4":rating4,
             "study": study
         };
         console.log("body: ",body);
@@ -134,7 +136,14 @@ const BootstrapDialog = styled(Dialog)(({ theme }) => ({
         }}
         precision={1.0}
         emptyIcon={<StarIcon style={{ opacity: 0.55 }} fontSize="inherit" />}/>
-
+        <Typography component="legend">What is the probability of you recommending this course to others? </Typography><Rating
+        name="rating4"
+        value={rating4}
+        onChange={(event, newValue) => {
+            setRating4(newValue);
+        }}
+        precision={1.0}
+        emptyIcon={<StarIcon style={{ opacity: 0.55 }} fontSize="inherit" />}/>
         </DialogContent>
         <DialogActions>
             <Button type="submit" onClick={handleSubmit} >

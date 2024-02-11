@@ -9,6 +9,7 @@ import { makeStyles } from '@mui/styles';
 
 import { Link } from "react-router-dom";
 import Logo from "../Icons/logo";
+import LogoutIcon from '@mui/icons-material/Logout';
 
 const useStyles = makeStyles((theme) => ({
   navlinks: {
@@ -24,6 +25,10 @@ const useStyles = makeStyles((theme) => ({
   },
   logged: {
     position: 'absolute',
+    right: 60,
+  },
+  logout: {
+    position: 'absolute',
     right: 30,
   },
   link: { 
@@ -33,14 +38,17 @@ const useStyles = makeStyles((theme) => ({
     marginLeft: 30,
     "&:hover": {
       color: "yellow",
-      borderBottom: "1px solid white",
+      //borderBottom: "1px solid white",
     },
   },
 }));
 
-function CourseHeader() {
+function CourseHeader({ setToken }) {
     const firstName = sessionStorage.getItem('firstname');
     const lastName = sessionStorage.getItem('lastname');
+    const logout = ()=>{
+      setToken("null");
+    }
    // const study = sessionStorage.getItem('study');
 
   const classes = useStyles();
@@ -49,15 +57,13 @@ function CourseHeader() {
     <AppBar position="static">
       <CssBaseline />
       <Toolbar>
-        <Typography variant="h6" className={classes.logo1}>
-        <Link onClick={() =>window.location.href="/home"} className={classes.link}>
+        <Typography style={{paddingTop:10}} variant="h6" className={classes.logo1}>
+        <Link  onClick={() =>window.location.href="/home"} className={classes.link}>
           <Logo />
           </Link>
         </Typography>
         <Typography variant="h6" className={classes.logo}>
-        <Link onClick={() =>window.location.href="/home"} className={classes.logo}>
-         LA RAHAM
-         </Link>
+  
         </Typography>
         
           <div className={classes.navlinks}>
@@ -65,11 +71,19 @@ function CourseHeader() {
               Home
             </Link>
             <Link  className={classes.link} onClick={() =>window.location.href="/courses"}>
-              Katalog
+            Catalog
+            </Link>
+            <Link  className={classes.link} onClick={() =>window.location.href="/visual"}>
+              Visualization
             </Link>
           </div>
           <Typography variant="span" className={classes.logged}>
-            {firstName} {lastName}
+            {firstName} {lastName} 
+        </Typography>
+        <Typography variant="span" className={classes.logout}>
+        <Link  className={classes.link} onClick={() =>window.location.href="/login"}>
+            <LogoutIcon onClick={logout}></LogoutIcon>
+            </Link>
         </Typography>
       </Toolbar>
     </AppBar>
