@@ -1,9 +1,8 @@
 from functools import reduce
 from bson.objectid import ObjectId
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import json
-from flask import Flask, jsonify
 from pymongo import MongoClient
 import random
 import helper
@@ -26,8 +25,27 @@ app = Flask(__name__)
 def login():
     data = json.loads(request.data)
     res = u_collection.find_one(data)
-    res["_id"] = str(res["_id"])
+    print(res)
+    if res != None:
+        res["_id"] = str(res["_id"])
+    else:
+        res = {"err": "error"}
 
+    return res
+
+
+@app.route("/signup", methods=["POST"])
+def signup():
+    data = json.loads(request.data)
+    print(data)
+    res = u_collection.find_one({"email": data["email"]})
+    if res == None:
+        insert_res = u_collection.insert_one(data)
+        print(insert_res)
+        res = u_collection.find_one({"email": data["email"]})
+        res["_id"] = str(res["_id"])
+    else:
+        res = {"err": "error"}
     return res
 
 
@@ -52,14 +70,6 @@ def get_course():
         enrolled = len(list(filter(lambda x: x["uid"] == user, ratings))) > 0
         res2 = list(collection.find({"study": res["study"]}))
         rec = helper.get_recs(res2, [res], study=res["study"])
-        print(len(rec))
-        # rec_res = helper.get_recommendations(res2, res["_id"])
-        # rec = list(
-        #    filter(
-        #        lambda x: x["_id"] != course_id,
-        #       rec_res,
-        #   )
-        # )
         together = helper.association_rule(
             cu_collection, collection, course_id, res["study"]
         )
