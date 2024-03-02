@@ -2,7 +2,7 @@
 
 <table>
   <tr>
-    <th style="width:10%"><img src="./images/logo.png" style="width:100%"></th>
+    <th style="width:100px"><img src="./images/logo.png" style="width:100%"></th>
     <th>LecRec is a web application built for the BAI and MAI students of  the university Duisburg-Essen to help them to choose the elective courses based on the similarity between the courses, based on the student ratings or based on the course, that are been taken usually together.</th>
   </tr>
 </table>
