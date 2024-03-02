@@ -6,7 +6,6 @@ from mlxtend.frequent_patterns import apriori, association_rules
 from surprise import Dataset
 from surprise import Reader
 from surprise import SVD
-import torch
 import transformers
 from pymongo import MongoClient
 import config
@@ -25,43 +24,14 @@ bert_model.eval()
 def get_courses_similarity(s1, s2):
     s1 = bert_tokenizer.encode(s1)
     s2 = bert_tokenizer.encode(s2)
-    s1 = torch.tensor(s1)
-
-    s1 = s1.unsqueeze(
-        0
-    )  # add an extra dimension, why ? the model needs to be fed in batches, we give a dummy batch 1
-
-    s2 = torch.tensor(s2).unsqueeze(0)
-
-    # Pass it to the model for inference
-    with torch.no_grad():
-        output_1 = bert_model(s1)
-        output_2 = bert_model(s2)
-
-    logits_s1 = output_1[
-        0
-    ]  # The last hidden-state is the first element of the output tuple
-    logits_s2 = output_2[0].detach()
-
-    logits_s1 = logits_s1.detach()  # to remove the last part we call detach
-
-    logits_s1 = torch.squeeze(logits_s1)  # lets remove the batch dimension by squeeze
-    logits_s2 = torch.squeeze(logits_s2)
-    a = logits_s1.reshape(
-        1, logits_s1.numel()
-    )  # we lay the vector flat make it 1, **768 via reshape; numel is number of elements
-    b = logits_s2.reshape(1, logits_s2.numel())
-
-    # so we pad the tensors to be same shape
-    if a.shape[1] < b.shape[1]:
-        pad_size = (0, b.shape[1] - a.shape[1])
-        a = torch.nn.functional.pad(a, pad_size, mode="constant", value=0)
+    n = abs(len(s1) - len(s2)) * [0]
+    if len(s1) > len(s2):
+        s2 = s2 + n
     else:
-        pad_size = (0, a.shape[1] - b.shape[1])
-        b = torch.nn.functional.pad(b, pad_size, mode="constant", value=0)
+        s1 = s1 + n
 
     # Calculate the cosine similarity
-    cos_sim = cosine_similarity(a, b)
+    cos_sim = cosine_similarity([s1], [s2])
     return cos_sim[0][0]
 
 
