@@ -24,7 +24,7 @@ const useStyles = makeStyles({
 });
 
 
-export default function Courses()  {
+export default function Courses({ setToken })  {
   let study = sessionStorage.getItem('study');
 
   const classes = useStyles();
@@ -55,10 +55,10 @@ export default function Courses()  {
   return (
     <React.Fragment>
       <CssBaseline />
-      <CourseHeader/>
+      <CourseHeader setToken={setToken}/>
       <Container sx={{ maxWidth:'95%'  }} maxWidth={false} className={classes.container}>
       <Typography variant={"h5"} component={"h2"}>
-          Vorlesungen ({results.length})
+          Courses ({results.length})
         </Typography>
         <Typography component="div">
           <ResultList results={results} />

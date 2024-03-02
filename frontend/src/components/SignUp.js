@@ -3,7 +3,6 @@ import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Link from '@mui/material/Link';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
@@ -15,6 +14,8 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
+import { useHttpClient } from "../hooks/useHttp"; 
+import { useNavigate } from "react-router-dom";
 
 function Copyright(props) {
   return (
@@ -34,14 +35,47 @@ function Copyright(props) {
 const defaultTheme = createTheme();
 
 export default function SignUp( {setToken}) {
-  const handleSubmit = (event) => {
+  const [errorMessage, setErrorMessage] = React.useState("");
+  let navigate = useNavigate(); 
+  const routeChange = () =>{ 
+    let path = `/home`;
+    navigate(path);
+    window.location.reload(false);
+      
+  }
+  const { sendRequest } = useHttpClient();
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log(data);
-    console.log({
-      email: data.get('email'),
-      password: data.get('password'),
-    });
+    const email = data.get('email');
+    const password = data.get('password');
+    const firstName = data.get('firstName');
+    const lastName = data.get('lastName');
+    const study = data.get('study');
+    const body = {email: email, password: password, firstname: firstName, lastname: lastName, study:study};
+    try {
+      const [responseData, statusOk] = await sendRequest(
+        `/signup`,
+        "POST",
+        JSON.stringify(body),
+        {
+          "Content-Type": "application/json",
+        }
+      );
+      if (statusOk) {
+        if(responseData._id !== undefined){
+          setToken(responseData._id);
+          sessionStorage.setItem('firstname', responseData.firstname);
+          sessionStorage.setItem('lastname', responseData.lastname);
+          sessionStorage.setItem('study', responseData.study);
+          routeChange();
+        }else{
+          setErrorMessage("Account exists already");
+        }
+        
+
+      }
+    } catch (err) {}
   };
 
   return (
@@ -124,6 +158,7 @@ export default function SignUp( {setToken}) {
                 </Select>
                 </FormControl>
               </Grid>
+              <label style={{color:"red"}}>{errorMessage}</label>
             </Grid>
             <Button
               type="submit"

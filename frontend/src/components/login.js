@@ -3,8 +3,6 @@ import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import Link from '@mui/material/Link';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
@@ -34,6 +32,7 @@ const defaultTheme = createTheme();
 
 
 export default function Login({ setToken }) {
+  const [errorMessage, setErrorMessage] = React.useState("");
   let navigate = useNavigate(); 
           const routeChange = () =>{ 
             let path = `/home`;
@@ -57,12 +56,19 @@ export default function Login({ setToken }) {
             "Content-Type": "application/json",
           }
         );
+        console.log("status",statusOk);
         if (statusOk) {
-          setToken(responseData._id);
-          sessionStorage.setItem('firstname', responseData.firstname);
-          sessionStorage.setItem('lastname', responseData.lastname);
-          sessionStorage.setItem('study', responseData.study);
-          routeChange()
+          console.log(responseData);
+          if(responseData._id !== undefined){
+            setToken(responseData._id);
+            sessionStorage.setItem('firstname', responseData.firstname);
+            sessionStorage.setItem('lastname', responseData.lastname);
+            sessionStorage.setItem('study', responseData.study);
+            routeChange();
+          }else{
+            setErrorMessage("login data are wrong");
+            console.log(errorMessage);
+          }
 
         }
       } catch (err) {}
@@ -108,10 +114,7 @@ export default function Login({ setToken }) {
                   id="password"
                   autoComplete="current-password"
                 />
-                <FormControlLabel
-                  control={<Checkbox value="remember" color="primary" />}
-                  label="Remember me"
-                />
+                <label style={{color:"red"}}>{errorMessage}</label>
                 <Button
                   type="submit"
                   fullWidth

@@ -15,9 +15,16 @@ import Rating from '@mui/material/Rating';
 import StarIcon from '@mui/icons-material/Star';
 import Enroll from './enroll'
 import Chip from '@mui/material-next/Chip';
+import Box from '@mui/material/Box';
+import PropTypes from 'prop-types';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Plot from 'react-plotly.js';
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
+
 
 import { styled } from '@mui/material/styles';
-import Avatar from '@mui/material/Avatar';
 
 const ListItem = styled('li')(({ theme }) => ({
   margin: theme.spacing(0.5),
@@ -49,7 +56,40 @@ const useStyles = makeStyles({
 
 });
 
-const CourseDetails = () => {
+function CustomTabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 0 }}>
+          <Typography>{children}</Typography>
+        </Box>
+      )}
+    </div>
+  );
+}
+
+CustomTabPanel.propTypes = {
+  children: PropTypes.node,
+  index: PropTypes.number.isRequired,
+  value: PropTypes.number.isRequired,
+};
+
+function a11yProps(index) {
+  return {
+    id: `simple-tab-${index}`,
+    'aria-controls': `simple-tabpanel-${index}`,
+  };
+}
+
+const CourseDetails = ({ setToken }) => {
   const [keywords, setKeywords] = useState(["1"]);
   const classes = useStyles();
   const [queryParameters] = useSearchParams();
@@ -59,15 +99,21 @@ const CourseDetails = () => {
   const [rating1, setRating1] = useState(0);
   const [rating2, setRating2] = useState(0);
   const [rating3, setRating3] = useState(0);
+  const [rating4, setRating4] = useState(0);
+
   const [count, setCount] = useState(0);
   const [enrolled, setEnrolled] = useState(false);
-
+  const [data, setData] = useState([]);
+  const [layout, setLayout] = useState({});
   const [course, setCourse] = useState([]);
   const [my_rec, setRec] = useState([]);
   const [together, setTogether] = useState([]);
+  const [value, setValue] = React.useState(0);
+  const [open, setOpen] = React.useState(false);
 
   const { sendRequest } = useHttpClient();
   async function handleClick() {
+    setOpen(true);
     try {
       const [responseData, statusOk] = await sendRequest(
         `/db?id=${c_id}&uid=${token}`,
@@ -77,7 +123,7 @@ const CourseDetails = () => {
           "Content-Type": "application/json",
         }
       );
-      console.log(responseData);
+      console.log(statusOk);
       if (statusOk) {
         setCourse(responseData.res);
         setKeywords(responseData.res.keywords);
@@ -86,9 +132,25 @@ const CourseDetails = () => {
         setRating1(responseData.ratings.count>0?responseData.ratings.r1/responseData.ratings.count:0);
         setRating2(responseData.ratings.count>0?responseData.ratings.r2/responseData.ratings.count:0);
         setRating3(responseData.ratings.count>0?responseData.ratings.r3/responseData.ratings.count:0);
+        setRating4(responseData.ratings.count>0?responseData.ratings.r4/responseData.ratings.count:0);
         setEnrolled(!responseData.enrolled);
         setTogether(responseData.together);
-        console.log(keywords);
+        const date_json = JSON.parse(responseData.vis)
+        console.log(date_json); 
+        setData(date_json.data); 
+        let lay = date_json.layout;
+            lay.responsive= true;
+            lay.autosize= true;
+            lay.useResizeHandler= true;
+            lay.width= 1200;
+            lay.height= 800;
+            lay.dragmode= "pan";
+            lay.clickmode ="select";
+            lay.hovermode = "closest";
+            lay.scattergap = 1;
+            lay.scattermode="overlay";
+            setLayout(lay);
+            setOpen(false);
         
       }
     } catch (err) {}
@@ -97,11 +159,20 @@ const CourseDetails = () => {
     handleClick();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
 
 
   return (
     <div className={classes.details} style={{display: "grid"}}>
-      <CourseHeader/>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={open}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
+      <CourseHeader setToken={setToken}/>
         <Container sx={{ maxWidth:'95%'  }} maxWidth={false} className={classes.container}>
         <Paper className={classes.root} elevation={2}>
         <Typography variant="h4" component="h3">
@@ -131,9 +202,9 @@ const CourseDetails = () => {
       </Paper>
       <Accordion  >
         < AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography component="span"> <Rating
+        <Typography component="span"> <Rating 
         name="text-feedback0"
-        value={(rating1+rating2+rating3)/3}
+        value={(rating1+rating2+rating3+rating4)/3}
         readOnly
         precision={0.1}
         emptyIcon={<StarIcon style={{ opacity: 0.55 }} fontSize="inherit" />}
@@ -161,6 +232,13 @@ const CourseDetails = () => {
         precision={0.5}
         emptyIcon={<StarIcon style={{ opacity: 0.55 }} fontSize="inherit" />}
       /> How easy was the course?</Typography>
+      <Typography component="legend"><Rating
+        name="text-feedback3"
+        value={rating4}
+        readOnly
+        precision={0.5}
+        emptyIcon={<StarIcon style={{ opacity: 0.55 }} fontSize="inherit" />}
+      /> What is the probability of you recommending this course to others? </Typography>
         </AccordionDetails >
         </Accordion >
 
@@ -213,25 +291,37 @@ const CourseDetails = () => {
           </Typography>
         </AccordionDetails >
       </Accordion >
-
-
       </Container>
+      
       <Container sx={{ maxWidth:'95%'  }} maxWidth={false} className={classes.container}>
-      <Typography variant={"h5"} component={"h2"}>
-      Similar courses ({my_rec.length})
-        </Typography>
-        <Typography component="div">
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
+          <Tab label="Similar courses" {...a11yProps(0)} />
+          <Tab label="Usually together" {...a11yProps(1)} />
+          <Tab label="Visualization" {...a11yProps(2)} />
+        </Tabs>
+      </Box>
+      <CustomTabPanel value={value} index={0}>
+      <Typography component="div">
           <ResultList results={my_rec} />
         </Typography>
-      </Container>
-      <Container sx={{ maxWidth:'95%'  }} maxWidth={false} className={classes.container}>
-      <Typography variant={"h5"} component={"h2"}>
-      Usually together ({together.length})
-        </Typography>
-        <Typography component="div">
+      </CustomTabPanel>
+      <CustomTabPanel value={value} index={1}>
+      <Typography component="div">
           <ResultList results={together} />
         </Typography>
+      </CustomTabPanel>
+      <CustomTabPanel value={value} index={2}>
+      <Typography component="div">
+      <Plot
+        data={data}
+        layout={layout}
+        config={{scrollZoom: true, modeBarButtonsToRemove: ['lasso2d', 'select2d','zoom'],responsive: true,modeBarButtonsToAdd: ['hoverClosestGl2d', 'toggleHover']}}
+    />
+        </Typography>
+      </CustomTabPanel>
       </Container>
+
       </div>
   );
 };

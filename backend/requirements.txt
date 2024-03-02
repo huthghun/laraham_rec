@@ -1,2 +1,5 @@
-Flask==1.1.2
+Flask>=2.2.2
 pymongo==4.6.1
+networkx
+plotly
+scikit-surprise
